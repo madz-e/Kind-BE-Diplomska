@@ -1,0 +1,985 @@
+### ============================================================
+### Kind Mental Health App — API Test Script
+###
+### HOW TO USE (IntelliJ / HTTP Client):
+###   1. Open this file in IntelliJ IDEA.
+###   2. Select the "dev" environment (top-right dropdown).
+###   3. Run requests 1-to-114 in order, top-to-bottom.
+###      The login handler auto-fills {{token}} and all
+###      create handlers auto-fill their {{...Id}} variables.
+###
+### RE-RUNNING: If register returns 409, the test email
+###   already exists. Either change the email in requests
+###   [1] and [2] to something new, or run request [0] first
+###   to delete the leftover record.
+### ============================================================
+
+### [0] PRE-CLEAN — delete leftover test user from a previous
+###     run (ignore 404 if this is your first run)
+DELETE {{baseUrl}}/api/users/email/kindtest@kind.com
+Authorization: Bearer {{token}}
+
+###
+
+### ── AUTH ────────────────────────────────────────────────────
+
+### [1] Register a new user
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+  "name": "Kind Test User",
+  "email": "kindtest@kind.com",
+  "password": "Password123"
+}
+
+###
+
+### [2] Login — captures JWT token for all subsequent requests
+POST {{baseUrl}}/api/login
+Content-Type: application/json
+
+{
+  "email": "kindtest@kind.com",
+  "password": "Password123"
+}
+
+> {%
+  client.global.set("token", response.body.token);
+  client.global.set("userEmail", response.body.email);
+%}
+
+###
+
+### ── USERS ───────────────────────────────────────────────────
+
+### [3] Get all users
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{token}}
+
+###
+
+### [4] Get user by email — captures userId for later steps
+GET {{baseUrl}}/api/users/email/kindtest@kind.com
+Authorization: Bearer {{token}}
+
+> {%
+  client.global.set("userId", response.body.id);
+%}
+
+###
+
+### [5] Get user by ID
+GET {{baseUrl}}/api/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [6] Create a secondary user (conflict test)
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Second User",
+  "email": "second@kind.com",
+  "password": "Password123"
+}
+
+###
+
+### [7] Update notification settings (enable)
+PATCH {{baseUrl}}/api/users/{{userId}}/notifications?enabled=true
+Authorization: Bearer {{token}}
+
+###
+
+### [8] Complete intro for user
+PATCH {{baseUrl}}/api/users/{{userId}}/complete-intro
+Authorization: Bearer {{token}}
+
+###
+
+### [9] Update user details
+PUT {{baseUrl}}/api/users/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Kind Test User Updated",
+  "email": "kindtest@kind.com",
+  "password": "Password123"
+}
+
+###
+
+### ── EMOTIONS ─────────────────────────────────────────────────
+
+### [10] Create emotion (HAPPY)
+POST {{baseUrl}}/api/emotions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Joyful",
+  "moodCategory": "HAPPY"
+}
+
+> {%
+  client.global.set("emotionId", response.body.id);
+%}
+
+###
+
+### [11] Create emotion (SAD)
+POST {{baseUrl}}/api/emotions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Melancholic",
+  "moodCategory": "SAD"
+}
+
+###
+
+### [12] Get all emotions
+GET {{baseUrl}}/api/emotions
+Authorization: Bearer {{token}}
+
+###
+
+### [13] Get emotion by ID
+GET {{baseUrl}}/api/emotions/{{emotionId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [14] Get emotions by category
+GET {{baseUrl}}/api/emotions/category/HAPPY
+Authorization: Bearer {{token}}
+
+###
+
+### [15] Update emotion
+PUT {{baseUrl}}/api/emotions/{{emotionId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Ecstatic",
+  "moodCategory": "HAPPY"
+}
+
+###
+
+### ── MOOD FACTORS ─────────────────────────────────────────────
+
+### [16] Create mood factor
+POST {{baseUrl}}/api/mood-factors
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Exercise"
+}
+
+> {%
+  client.global.set("moodFactorId", response.body.id);
+%}
+
+###
+
+### [17] Get all mood factors
+GET {{baseUrl}}/api/mood-factors
+Authorization: Bearer {{token}}
+
+###
+
+### [18] Get mood factor by ID
+GET {{baseUrl}}/api/mood-factors/{{moodFactorId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [19] Update mood factor
+PUT {{baseUrl}}/api/mood-factors/{{moodFactorId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Running"
+}
+
+###
+
+### ── MOOD ENTRIES ─────────────────────────────────────────────
+
+### [20] Create mood entry
+POST {{baseUrl}}/api/mood-entries
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "date": "2026-06-16",
+  "moodValue": 8,
+  "note": "Feeling great today!",
+  "user": { "id": {{userId}} },
+  "selectedEmotions": [{ "id": {{emotionId}} }],
+  "selectedFactors":  [{ "id": {{moodFactorId}} }]
+}
+
+> {%
+  client.global.set("moodEntryId", response.body.id);
+%}
+
+###
+
+### [21] Get all mood entries for user
+GET {{baseUrl}}/api/mood-entries/user/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [22] Get mood entry by ID
+GET {{baseUrl}}/api/mood-entries/{{moodEntryId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [23] Get mood entry by user and date
+GET {{baseUrl}}/api/mood-entries/user/{{userId}}/date/2026-06-16
+Authorization: Bearer {{token}}
+
+###
+
+### [24] Get mood entries by date range
+GET {{baseUrl}}/api/mood-entries/user/{{userId}}/date-range?startDate=2026-06-01&endDate=2026-06-30
+Authorization: Bearer {{token}}
+
+###
+
+### [25] Get mood entries by category
+GET {{baseUrl}}/api/mood-entries/user/{{userId}}/category/HAPPY
+Authorization: Bearer {{token}}
+
+###
+
+### [26] Get mood entries by calendar month
+GET {{baseUrl}}/api/mood-entries/user/{{userId}}/calendar/2026/6
+Authorization: Bearer {{token}}
+
+###
+
+### [27] Get average mood for date range
+GET {{baseUrl}}/api/mood-entries/user/{{userId}}/average?startDate=2026-06-01&endDate=2026-06-30
+Authorization: Bearer {{token}}
+
+###
+
+### [28] Update mood entry
+PUT {{baseUrl}}/api/mood-entries/{{moodEntryId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "date": "2026-06-16",
+  "moodValue": 9,
+  "note": "Even better after reflection!",
+  "user": { "id": {{userId}} }
+}
+
+###
+
+### ── JOURNAL PROMPTS ──────────────────────────────────────────
+
+### [29] Create journal prompt (GENERAL)
+POST {{baseUrl}}/api/journal-prompts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "text": "What are three things you are grateful for today?",
+  "type": "GENERAL"
+}
+
+> {%
+  client.global.set("promptId", response.body.id);
+%}
+
+###
+
+### [30] Create journal prompt (ANT_EXERCISE)
+POST {{baseUrl}}/api/journal-prompts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "text": "Describe an automatic negative thought and challenge it.",
+  "type": "ANT_EXERCISE"
+}
+
+###
+
+### [31] Get all journal prompts
+GET {{baseUrl}}/api/journal-prompts
+Authorization: Bearer {{token}}
+
+###
+
+### [32] Get journal prompt by ID
+GET {{baseUrl}}/api/journal-prompts/{{promptId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [33] Get journal prompts by type
+GET {{baseUrl}}/api/journal-prompts/type/GENERAL
+Authorization: Bearer {{token}}
+
+###
+
+### [34] Update journal prompt
+PUT {{baseUrl}}/api/journal-prompts/{{promptId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "text": "What made you smile today?",
+  "type": "GENERAL"
+}
+
+###
+
+### ── JOURNAL ENTRIES ──────────────────────────────────────────
+
+### [35] Create blank journal entry
+POST {{baseUrl}}/api/journal-entries
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "createdAt": "2026-06-16",
+  "title": "My First Entry",
+  "content": "Today was a good day. I felt productive and calm.",
+  "type": "BLANK",
+  "user": { "id": {{userId}} }
+}
+
+> {%
+  client.global.set("journalEntryId", response.body.id);
+%}
+
+###
+
+### [36] Create prompt-based journal entry
+POST {{baseUrl}}/api/journal-entries
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "createdAt": "2026-06-16",
+  "title": "Gratitude Journal",
+  "content": "1. My health. 2. My friends. 3. Sunshine.",
+  "type": "PROMPT_BASED",
+  "user": { "id": {{userId}} },
+  "journalPrompt": { "id": {{promptId}} }
+}
+
+###
+
+### [37] Get all journal entries for user
+GET {{baseUrl}}/api/journal-entries/user/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [38] Get journal entry by ID
+GET {{baseUrl}}/api/journal-entries/{{journalEntryId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [39] Get journal entries by date range
+GET {{baseUrl}}/api/journal-entries/user/{{userId}}/date-range?startDate=2026-06-01T00:00:00&endDate=2026-06-30T23:59:59
+Authorization: Bearer {{token}}
+
+###
+
+### [40] Get journal entries by type
+GET {{baseUrl}}/api/journal-entries/user/{{userId}}/type/BLANK
+Authorization: Bearer {{token}}
+
+###
+
+### [41] Get journal entry count for user
+GET {{baseUrl}}/api/journal-entries/user/{{userId}}/count
+Authorization: Bearer {{token}}
+
+###
+
+### [42] Update journal entry
+PUT {{baseUrl}}/api/journal-entries/{{journalEntryId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "createdAt": "2026-06-16",
+  "title": "My Updated Entry",
+  "content": "Updated content — reflecting on a productive day.",
+  "type": "BLANK",
+  "user": { "id": {{userId}} }
+}
+
+###
+
+### ── HABITS ───────────────────────────────────────────────────
+
+### [43] Add default habits for user
+POST {{baseUrl}}/api/habits/user/{{userId}}/add-defaults
+Authorization: Bearer {{token}}
+
+###
+
+### [44] Create custom habit
+POST {{baseUrl}}/api/habits/user/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Morning Walk",
+  "description": "Walk 30 minutes every morning",
+  "colorHex": "#4CAF50",
+  "iconIdentifier": "walk",
+  "creationDate": "2026-06-16",
+  "isSystemHabit": false
+}
+
+> {%
+  client.global.set("habitId", response.body.id);
+%}
+
+###
+
+### [45] Get all habits for user
+GET {{baseUrl}}/api/habits/user/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [46] Get habit by ID
+GET {{baseUrl}}/api/habits/{{habitId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [47] Get habit statistics
+GET {{baseUrl}}/api/habits/{{habitId}}/info
+Authorization: Bearer {{token}}
+
+###
+
+### ── HABIT DAILY LOGS ─────────────────────────────────────────
+
+### [48] Toggle today's completion (complete)
+POST {{baseUrl}}/api/habits/{{habitId}}/logs/today?completed=true
+Authorization: Bearer {{token}}
+
+> {%
+  client.global.set("logId", response.body.id);
+%}
+
+###
+
+### [49] Log for a specific past date
+POST {{baseUrl}}/api/habits/{{habitId}}/logs/date/2026-06-15?completed=true
+Authorization: Bearer {{token}}
+
+###
+
+### [50] Get today's log status
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/today
+Authorization: Bearer {{token}}
+
+###
+
+### [51] Get 30-day calendar view
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/calendar
+Authorization: Bearer {{token}}
+
+###
+
+### [52] Get current streak
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/streak
+Authorization: Bearer {{token}}
+
+###
+
+### [53] Get weekly statistics
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/stats/weekly
+Authorization: Bearer {{token}}
+
+###
+
+### [54] Get weekly grid (Mon–Sun)
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/week
+Authorization: Bearer {{token}}
+
+###
+
+### [55] Get all logs for habit
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/all
+Authorization: Bearer {{token}}
+
+###
+
+### [56] Get completion rate for date range
+GET {{baseUrl}}/api/habits/{{habitId}}/logs/completion-rate?startDate=2026-06-01&endDate=2026-06-30
+Authorization: Bearer {{token}}
+
+###
+
+### [57] Delete a specific log entry
+DELETE {{baseUrl}}/api/habits/{{habitId}}/logs/{{logId}}
+Authorization: Bearer {{token}}
+
+###
+
+### ── AFFIRMATIONS ─────────────────────────────────────────────
+
+### [58] Initialize default affirmations (idempotent — safe to re-run)
+POST {{baseUrl}}/api/affirmations/init
+Authorization: Bearer {{token}}
+
+###
+
+### [59] Get today's affirmation (same all day)
+GET {{baseUrl}}/api/affirmations/today
+Authorization: Bearer {{token}}
+
+###
+
+### [60] Get a random affirmation
+GET {{baseUrl}}/api/affirmations/random
+Authorization: Bearer {{token}}
+
+###
+
+### [61] Get all affirmations
+GET {{baseUrl}}/api/affirmations
+Authorization: Bearer {{token}}
+
+###
+
+### [62] Create custom affirmation
+POST {{baseUrl}}/api/affirmations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "affirmationText": "I am capable of achieving great things."
+}
+
+> {%
+  client.global.set("affirmationId", response.body.id);
+%}
+
+###
+
+### [63] Get affirmation by ID
+GET {{baseUrl}}/api/affirmations/{{affirmationId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [64] Update affirmation text
+PUT {{baseUrl}}/api/affirmations/{{affirmationId}}?text=I grow stronger every single day.
+Authorization: Bearer {{token}}
+
+###
+
+### ── CALMING SOUNDS ───────────────────────────────────────────
+
+### [65] Initialize default calming sounds (idempotent — safe to re-run)
+POST {{baseUrl}}/api/calming-sounds/init
+Authorization: Bearer {{token}}
+
+###
+
+### [66] Get all calming sounds
+GET {{baseUrl}}/api/calming-sounds
+Authorization: Bearer {{token}}
+
+###
+
+### [67] Get calming sound by ID
+GET {{baseUrl}}/api/calming-sounds/1
+Authorization: Bearer {{token}}
+
+> {%
+  client.global.set("soundId", 1);
+%}
+
+###
+
+### [68] Get sounds for dropdown (includes "No Sound" option)
+GET {{baseUrl}}/api/calming-sounds/dropdown
+Authorization: Bearer {{token}}
+
+###
+
+### [69] Search calming sounds by name
+GET {{baseUrl}}/api/calming-sounds/search?name=rain
+Authorization: Bearer {{token}}
+
+###
+
+### [70] Get mindfulness exercises using a specific sound
+GET {{baseUrl}}/api/calming-sounds/1/exercises
+Authorization: Bearer {{token}}
+
+###
+
+### [71] Get calming sound statistics
+GET {{baseUrl}}/api/calming-sounds/1/statistics
+Authorization: Bearer {{token}}
+
+###
+
+### [72] Validate audio file exists for sound
+GET {{baseUrl}}/api/calming-sounds/1/validate
+Authorization: Bearer {{token}}
+
+###
+
+### [73] Update calming sound metadata
+PUT {{baseUrl}}/api/calming-sounds/1?name=Gentle+Rain+Updated&loopEnabled=true
+Authorization: Bearer {{token}}
+
+###
+
+### [74] Toggle loop setting for a sound
+PATCH {{baseUrl}}/api/calming-sounds/1/toggle-loop
+Authorization: Bearer {{token}}
+
+###
+
+### [75] Bulk update loop settings
+PATCH {{baseUrl}}/api/calming-sounds/bulk-loop
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "soundIds": [1, 2],
+  "loopEnabled": true
+}
+
+###
+
+### ── MINDFULNESS EXERCISES ────────────────────────────────────
+
+### [76] Initialize default exercises (idempotent — safe to re-run)
+POST {{baseUrl}}/api/exercises/initialize
+Authorization: Bearer {{token}}
+
+###
+
+### [77] Get all exercises
+GET {{baseUrl}}/api/exercises
+Authorization: Bearer {{token}}
+
+###
+
+### [78] Get exercises by type: BREATHING
+GET {{baseUrl}}/api/exercises/type/BREATHING
+Authorization: Bearer {{token}}
+
+###
+
+### [79] Get exercises by type: MEDITATION
+GET {{baseUrl}}/api/exercises/type/MEDITATION
+Authorization: Bearer {{token}}
+
+###
+
+### [80] Get exercise details — captures exerciseId
+GET {{baseUrl}}/api/exercises/1/details
+Authorization: Bearer {{token}}
+
+> {%
+  client.global.set("exerciseId", 1);
+%}
+
+###
+
+### [81] Get sound options for exercise dropdown
+GET {{baseUrl}}/api/exercises/sound-options
+Authorization: Bearer {{token}}
+
+###
+
+### [82] Assign sound to exercise
+PUT {{baseUrl}}/api/exercises/{{exerciseId}}/sound?soundId=1
+Authorization: Bearer {{token}}
+
+###
+
+### [83] Set custom duration (600 s = 10 min)
+PUT {{baseUrl}}/api/exercises/{{exerciseId}}/duration?durationSeconds=600
+Authorization: Bearer {{token}}
+
+###
+
+### [84] Start exercise session with sound and custom duration
+POST {{baseUrl}}/api/exercises/{{exerciseId}}/start?soundId=1&duration=300
+Authorization: Bearer {{token}}
+
+###
+
+### [85] Start exercise session with no sound (default duration)
+POST {{baseUrl}}/api/exercises/{{exerciseId}}/start
+Authorization: Bearer {{token}}
+
+###
+
+### ── REMINDERS ────────────────────────────────────────────────
+
+### [86] Get all available reminder types
+GET {{baseUrl}}/api/reminders/types
+Authorization: Bearer {{token}}
+
+###
+
+### [87] Create a general reminder — captures reminderId
+POST {{baseUrl}}/api/reminders
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user": { "id": {{userId}} },
+  "timeOfDay": "09:00:00",
+  "daysOfWeek": "MON,TUE,WED,THU,FRI",
+  "type": "GENERAL",
+  "message": "Take a moment to breathe and reset.",
+  "enabled": true
+}
+
+> {%
+  client.global.set("reminderId", response.body.reminder.id);
+%}
+
+###
+
+### [88] Create affirmation reminder (convenience endpoint)
+POST {{baseUrl}}/api/reminders/affirmation
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": {{userId}},
+  "affirmationId": {{affirmationId}},
+  "timeOfDay": "08:00:00",
+  "daysOfWeek": "MON,WED,FRI"
+}
+
+###
+
+### [89] Create general reminder (convenience endpoint)
+POST {{baseUrl}}/api/reminders/general
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": {{userId}},
+  "timeOfDay": "20:00:00",
+  "daysOfWeek": "MON,TUE,WED,THU,FRI,SAT,SUN",
+  "message": "Time for your evening journal."
+}
+
+###
+
+### [90] Get all reminders (admin/debug)
+GET {{baseUrl}}/api/reminders
+Authorization: Bearer {{token}}
+
+###
+
+### [91] Get all reminders for user
+GET {{baseUrl}}/api/reminders/user/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [92] Get affirmation reminders for user
+GET {{baseUrl}}/api/reminders/user/{{userId}}/affirmations
+Authorization: Bearer {{token}}
+
+###
+
+### [93] Get general reminders for user
+GET {{baseUrl}}/api/reminders/user/{{userId}}/general
+Authorization: Bearer {{token}}
+
+###
+
+### [94] Get reminder by ID
+GET {{baseUrl}}/api/reminders/{{reminderId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [95] Update reminder
+PUT {{baseUrl}}/api/reminders/{{reminderId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "timeOfDay": "10:00:00",
+  "daysOfWeek": "MON,WED,FRI",
+  "message": "Updated: midday mindfulness break.",
+  "enabled": true
+}
+
+###
+
+### [96] Toggle reminder off
+PATCH {{baseUrl}}/api/reminders/{{reminderId}}/toggle?enabled=false
+Authorization: Bearer {{token}}
+
+###
+
+### [97] Toggle reminder back on
+PATCH {{baseUrl}}/api/reminders/{{reminderId}}/toggle?enabled=true
+Authorization: Bearer {{token}}
+
+###
+
+### ── CLEANUP / DELETES ────────────────────────────────────────
+
+### [98] Delete reminder
+DELETE {{baseUrl}}/api/reminders/{{reminderId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [99] Delete affirmation
+DELETE {{baseUrl}}/api/affirmations/{{affirmationId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [100] Delete journal entry
+DELETE {{baseUrl}}/api/journal-entries/{{journalEntryId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [101] Delete journal prompt
+DELETE {{baseUrl}}/api/journal-prompts/{{promptId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [102] Delete mood entry
+DELETE {{baseUrl}}/api/mood-entries/{{moodEntryId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [103] Delete mood factor
+DELETE {{baseUrl}}/api/mood-factors/{{moodFactorId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [104] Delete emotion
+DELETE {{baseUrl}}/api/emotions/{{emotionId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [105] Delete habit (cascades its daily logs)
+DELETE {{baseUrl}}/api/habits/{{habitId}}
+Authorization: Bearer {{token}}
+
+###
+
+### [106] Delete calming sound (will fail if in use by exercises)
+DELETE {{baseUrl}}/api/calming-sounds/1
+Authorization: Bearer {{token}}
+
+###
+
+### [107] Delete test user
+DELETE {{baseUrl}}/api/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### ── ERROR / EDGE CASES ───────────────────────────────────────
+
+### [108] Duplicate registration — expects 409
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+  "name": "Kind Test User",
+  "email": "kindtest@kind.com",
+  "password": "Password123"
+}
+
+###
+
+### [109] Login with wrong password — expects 401/403
+POST {{baseUrl}}/api/login
+Content-Type: application/json
+
+{
+  "email": "kindtest@kind.com",
+  "password": "WrongPassword1"
+}
+
+###
+
+### [110] Access protected endpoint without token — expects 401
+GET {{baseUrl}}/api/users
+
+###
+
+### [111] Get non-existent user — expects 404
+GET {{baseUrl}}/api/users/999999
+Authorization: Bearer {{token}}
+
+###
+
+### [112] Get non-existent mood entry — expects 404
+GET {{baseUrl}}/api/mood-entries/999999
+Authorization: Bearer {{token}}
+
+###
+
+### [113] Get non-existent reminder — expects 404
+GET {{baseUrl}}/api/reminders/999999
+Authorization: Bearer {{token}}
+
+###
+
+### [114] Weak password (no uppercase) — expects 400
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+  "name": "Weak Password User",
+  "email": "weak@kind.com",
+  "password": "password123"
+}
+
+###
+
+### ── INSIGHTS ────────────────────────────────────────────────────
+
+### [115] Get today's AI mood insight for the authenticated user
+GET {{baseUrl}}/api/insights/today
+Authorization: Bearer {{token}}
+
+###

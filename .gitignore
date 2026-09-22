@@ -1,0 +1,33 @@
+# Compiled class files
+*.class
+*.meta
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Build files
+build/
+out/
+
+# Maven (only mention target/ once)
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+
+# Gradle
+.gradle/
+
+# Local database files
+*.db
+*.local.xml
+
+# Application properties
+src/main/resources/application.properties
+src/main/resources/application-prod.properties
+src/main/resources/application-test.properties
+src/main/resources/application-local.properties
+.env
