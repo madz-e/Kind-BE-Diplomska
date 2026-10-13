@@ -1,5 +1,6 @@
 package com.example.controller;
 
+import com.example.dto.HabitWithWeekDto;
 import com.example.model.HabitDailyLog;
 import com.example.service.impl.HabitDailyLogService;
 import lombok.RequiredArgsConstructor;

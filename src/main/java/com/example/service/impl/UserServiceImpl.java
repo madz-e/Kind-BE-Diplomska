@@ -4,6 +4,7 @@ import com.example.jpaRepository.UserRepository;
 import com.example.model.User;
 import com.example.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,9 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private User getCurrentUser() {
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
 
     @Override
     public List<User> getAllUsers() {
@@ -84,5 +88,17 @@ public class UserServiceImpl implements UserService {
 
         user.setCompletedIntro(true);
         return userRepository.save(user);
+    }
+
+    public void savePushToken(String token) {
+        List<User> previousOwners = userRepository.findByPushToken(token);
+        for (User user : previousOwners) {
+            user.setPushToken(null);
+            userRepository.save(user);
+        }
+
+        User currentUser = getCurrentUser();
+        currentUser.setPushToken(token);
+        userRepository.save(currentUser);
     }
 }

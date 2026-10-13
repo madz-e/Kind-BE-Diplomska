@@ -1,5 +1,6 @@
 package com.example.service.impl;
 
+import com.example.dto.HabitWithWeekDto;
 import com.example.jpaRepository.HabitDailyLogRepository;
 import com.example.model.Habit;
 import com.example.model.HabitDailyLog;
@@ -176,5 +177,16 @@ public class HabitDailyLogService {
         long completedCount = logRepository.countCompletedInDateRange(habitId, startDate, endDate);
 
         return totalDays > 0 ? (double) completedCount / totalDays * 100 : 0.0;
+    }
+
+    public List<HabitWithWeekDto> getAllHabitsWithWeek(Long userId) {
+        List<Habit> habits = habitService.getAllHabits(userId);
+        List<HabitWithWeekDto> result = new ArrayList<>();
+        for(Habit habit : habits) {
+            List<Map<String, Object>> weekGrid = getWeeklyView(habit.getId());
+            HabitWithWeekDto dto = new HabitWithWeekDto(habit, weekGrid);
+            result.add(dto);
+        }
+        return result;
     }
 }

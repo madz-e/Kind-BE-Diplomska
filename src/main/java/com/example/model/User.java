@@ -55,6 +55,18 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
 
     @JsonIgnore
+    @Column(name="talk_requested_at")
+    private LocalDateTime talkRequestedAt;
+
+    public boolean isTalkFlagActive(){
+        return talkRequestedAt != null&&talkRequestedAt.isAfter(LocalDateTime.now().minusHours(6));
+    }
+
+    @JsonIgnore
+    @Column(name = "push_token")
+    private String pushToken;
+
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<MoodEntry> moodEntries = new HashSet<>();
@@ -108,4 +120,6 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+
 }

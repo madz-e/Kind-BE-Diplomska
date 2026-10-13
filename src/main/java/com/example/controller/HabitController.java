@@ -1,6 +1,8 @@
 package com.example.controller;
 
+import com.example.dto.HabitWithWeekDto;
 import com.example.model.Habit;
+import com.example.service.impl.HabitDailyLogService;
 import com.example.service.impl.HabitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HabitController {
     private final HabitService habitService;
+    private final HabitDailyLogService logService;
 
     // Create custom habit - KEEP
     @PostMapping("/user/{userId}")
@@ -52,5 +55,10 @@ public class HabitController {
     public ResponseEntity<Void> addDefaultHabits(@PathVariable Long userId) {
         habitService.addDefaultHabits(userId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user/{userId}/weeks")
+    public ResponseEntity<List<HabitWithWeekDto>> getHabitWeeks(@PathVariable Long userId){
+        return ResponseEntity.ok(logService.getAllHabitsWithWeek(userId));
     }
 }
