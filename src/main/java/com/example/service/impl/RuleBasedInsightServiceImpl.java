@@ -14,9 +14,9 @@ public class RuleBasedInsightServiceImpl {
     );
 
     public RuleBasedInsight evaluate(UserInsightContext ctx) {
-        String note = ctx.latestNote();
-        if (note != null) {
-            String lower = note.toLowerCase();
+        // 1. Check ALL recent writing (mood notes + journal), not just the latest note
+        for (String text : ctx.recentTexts()) {
+            String lower = text.toLowerCase();
             for (String phrase : CRISIS_PHRASES) {
                 if (lower.contains(phrase)) {
                     return new RuleBasedInsight("CRISIS_FLAG", "STABLE", true, "CRISIS_KEYWORD_MATCH");
@@ -24,11 +24,11 @@ public class RuleBasedInsightServiceImpl {
             }
         }
 
-        List<Integer> values = ctx.moodValuesLast7Days();
+        // 2. Streak of low DAYS (daily average ≤ 2), not low entries
         int longestStreak = 0;
         int currentStreak = 0;
-        for (Integer v : values) {
-            if (v <= 2) {
+        for (Double dayAvg : ctx.dailyAveragesLast7Days()) {
+            if (dayAvg <= 2.0) {
                 currentStreak++;
                 longestStreak = Math.max(longestStreak, currentStreak);
             } else {
@@ -49,7 +49,6 @@ public class RuleBasedInsightServiceImpl {
 
         return new RuleBasedInsight(severity, moodTrend, false, "STREAK_" + longestStreak);
     }
-
     private String determineTrend(Double avg7, Double avg14) {
         if (avg7 == null || avg14 == null) return "STABLE";
         double diff = avg7 - avg14;
