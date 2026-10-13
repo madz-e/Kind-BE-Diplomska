@@ -30,9 +30,9 @@ public class MoodEntry {
     @Column(nullable = false)
     private LocalDate date;
 
-    // TODO max the field to 10 - validation
+    // TODO max the field to 5 - validation
     @Column(nullable = false)
-    private Integer moodValue;  // Slider 1-10
+    private Integer moodValue;  // Slider 1-5
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

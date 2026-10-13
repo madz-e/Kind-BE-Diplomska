@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum MoodCategory {
-    VERY_UNPLEASANT(1, 2, "#9333EA", "Check on them"),
-    UNPLEASANT(3, 4, "#3B82F6", "They're having a tough time"),
-    NEUTRAL(5, 6, "#6B7280", "They're doing okay"),
-    PLEASANT(7, 8, "#10B981", "They're doing well"),
-    VERY_PLEASANT(9, 10, "#059669", "They're feeling great!");
+    VERY_UNPLEASANT(1, 1, "#9333EA", "Check on them"),
+    UNPLEASANT(2, 2, "#3B82F6", "They're having a tough time"),
+    NEUTRAL(3, 3, "#6B7280", "They're doing okay"),
+    PLEASANT(4, 4, "#10B981", "They're doing well"),
+    VERY_PLEASANT(5, 5, "#059669", "They're feeling great!");
 
     private final int minValue;
     private final int maxValue;
@@ -28,6 +28,6 @@ public enum MoodCategory {
                 return category;
             }
         }
-        throw new IllegalArgumentException("Invalid mood value: " + moodValue + ". Must be between 1 and 10.");
+        throw new IllegalArgumentException("Invalid mood value: " + moodValue + ". Must be between 1 and 5.");
     }
 }
