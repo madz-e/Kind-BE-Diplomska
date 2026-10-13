@@ -31,7 +31,7 @@ public class InsightServiceImpl implements InsightService {
                     "Please reach out to a crisis helpline or a trusted mental health professional right away. You are not alone — support is available.",
                     "RULE_BASED_FALLBACK",
                     rule,
-                    null
+                    null, null
             );
         }
 
@@ -42,14 +42,15 @@ public class InsightServiceImpl implements InsightService {
             String feelingSummary = node.get("feeling_summary").asText();
             String recommendation = node.get("recommendation").asText();
             String reason = node.has("reason") ? node.get("reason").asText(null) : null;
-            return new InsightResponse(feelingSummary, recommendation, "LLM", rule, reason);
+            String patternNote = node.has("pattern_note") ? node.get("pattern_note").asText("") : "";
+            return new InsightResponse(feelingSummary, recommendation, "LLM", rule, reason, patternNote);
         } catch (Exception e) {
             return new InsightResponse(
                     fallbackSummary(rule.severity()),
                     fallbackRecommendation(rule.severity()),
                     "RULE_BASED_FALLBACK",
                     rule,
-                    null
+                    null, null
             );
         }
     }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -33,4 +34,8 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
     List<String> findAllContentByUserIdAndDateRange(@Param("userId") Long userId,
                                                     @Param("startDate") LocalDateTime startDate,
                                                     @Param("endDate") LocalDateTime endDate);
+
+    List<JournalEntry> findByUserIdAndCreatedAtBetweenOrderByCreatedAtAsc(Long userId,
+                                                                          LocalDate startDate,
+                                                                          LocalDate endDate);
 }

@@ -5,5 +5,6 @@ public record InsightResponse(
         String recommendation,
         String source,
         RuleBasedInsight ruleBasedInsight,
-        String reason
+        String reason,
+        String patternNote
 ) {}

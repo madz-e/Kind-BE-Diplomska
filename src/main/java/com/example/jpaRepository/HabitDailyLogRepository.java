@@ -47,4 +47,12 @@ public interface HabitDailyLogRepository extends JpaRepository<HabitDailyLog, Lo
             "ORDER BY h.date DESC")
     List<HabitDailyLog> findRecentCompletedLogs(@Param("habitId") Long habitId,
                                                 @Param("currentDate") LocalDate currentDate);
+
+    @Query("SELECT h FROM HabitDailyLog h JOIN FETCH h.habit hb " +
+            "WHERE hb.user.id = :userId " +
+            "AND h.date BETWEEN :startDate AND :endDate " +
+            "AND h.completed = true")
+    List<HabitDailyLog> findCompletedByUserInRange(@Param("userId") Long userId,
+                                                   @Param("startDate") LocalDate startDate,
+                                                   @Param("endDate") LocalDate endDate);
 }

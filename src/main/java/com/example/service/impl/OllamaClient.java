@@ -9,6 +9,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class OllamaClient {
@@ -30,6 +31,7 @@ public class OllamaClient {
         Map<String, Object> requestBody = Map.of(
                 "model", model,
                 "stream", false,
+                "think", false,                       // ← the new line
                 "messages", List.of(
                         Map.of("role", "system", "content", buildSystemPrompt(rule)),
                         Map.of("role", "user", "content", buildUserPrompt(ctx, rule))
@@ -71,25 +73,36 @@ public class OllamaClient {
                 + "You must never diagnose, prescribe, or claim to be a mental health professional."
                 + crisisAddendum
                 + " Reflect the user's recent emotional state with empathy and offer one concrete, gentle activity suggestion."
+                + " Mood values are on a scale from 1 (very unpleasant) to 5 (very pleasant); 3 is neutral."
+                + " If observed patterns are listed, you may mention at most one of them, gently, as a possible connection"
+                + " (e.g. 'it seems your mood tends to be brighter on days you...'). Never present it as a cause or a certainty,"
+                + " and never invent patterns that are not listed."
                 + " You MUST respond ONLY with valid JSON in exactly this shape:"
                 + " {\"feeling_summary\": \"<1-2 warm sentences reflecting the user's recent emotional state>\","
                 + " \"recommendation\": \"<one concrete, gentle activity suggestion>\","
-                + " \"reason\": \"<one brief sentence explaining why this activity helps — e.g. a psychological or physiological rationale>\"}"
+                + " \"reason\": \"<one brief sentence explaining why this activity helps — e.g. a psychological or physiological rationale>\","
+                + " \"pattern_note\": \"<one gentle sentence about one observed pattern, or an empty string if none are listed>\"}"
                 + " No extra keys, no text outside the JSON object.";
     }
-
     private String buildUserPrompt(UserInsightContext ctx, RuleBasedInsight rule) {
+        String patterns = ctx.patterns().isEmpty()
+                ? "none"
+                : ctx.patterns().stream()
+                .map(p -> "- " + p.sentence())
+                .collect(Collectors.joining("\n"));
+
         return String.format(
                 "User first name: %s%n"
-                        + "Average mood last 7 days (1-10): %s%n"
-                        + "Average mood last 14 days (1-10): %s%n"
-                        + "Mood values last 7 days (chronological): %s%n"
+                        + "Average mood last 7 days (1-5): %s%n"
+                        + "Average mood last 14 days (1-5): %s%n"
+                        + "Mood values last 7 days (chronological, 1-5): %s%n"
                         + "Recent emotions: %s%n"
                         + "Recent contributing factors: %s%n"
                         + "Habit completion rates (last 7 days): %s%n"
-                        + "Latest journal note: %s%n"
+                        + "Latest note: %s%n"
                         + "Mood trend: %s%n"
-                        + "Wellbeing severity: %s",
+                        + "Wellbeing severity: %s%n"
+                        + "Observed patterns (calculated from the last 30 days; correlations, not causes):%n%s",
                 ctx.firstName(),
                 ctx.averageMoodLast7Days() != null ? String.format("%.1f", ctx.averageMoodLast7Days()) : "no data",
                 ctx.averageMoodLast14Days() != null ? String.format("%.1f", ctx.averageMoodLast14Days()) : "no data",
@@ -99,7 +112,7 @@ public class OllamaClient {
                 ctx.habitCompletionRates().isEmpty() ? "no habits" : ctx.habitCompletionRates(),
                 ctx.latestNote() != null ? ctx.latestNote() : "none",
                 rule.moodTrend(),
-                rule.severity()
+                rule.severity(),
+                patterns
         );
-    }
-}
+    }}
