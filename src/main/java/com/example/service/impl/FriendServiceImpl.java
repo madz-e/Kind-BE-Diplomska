@@ -90,4 +90,27 @@ public class FriendServiceImpl {
         User currentUser = getCurrentUser();
         return currentUser.isTalkFlagActive();
     }
+
+    public void sendHeart(Long friendId) {
+        User sender = getCurrentUser();
+        User receiver = userRepository.findById(friendId)
+                .orElseThrow(() -> new UserNotFoundException("No user found with that id"));
+
+        // friendships are stored with the lower id as firstUser, same as in saveFriend()
+        User first = sender.getId() < receiver.getId() ? sender : receiver;
+        User second = sender.getId() < receiver.getId() ? receiver : sender;
+        if (!friendRepository.existsByFirstUserAndSecondUser(first, second)) {
+            throw new IllegalArgumentException("You can only send hearts to friends");
+        }
+
+        if (receiver.getPushToken() == null) return; // they don't have notifications set up
+
+        pushNotificationService.send(
+                List.of(receiver.getPushToken()),
+                "Kind<3",
+                sender.getFirstName() + " sent you <3"
+        );
+    }
+
+
 }

@@ -55,5 +55,11 @@ public class FriendController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{friendId}/send-heart")
+    public ResponseEntity<Void> sendHeart(@PathVariable Long friendId) {
+        friendService.sendHeart(friendId);
+        return ResponseEntity.ok().build();
+    }
+
 
 }
