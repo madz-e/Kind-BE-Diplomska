@@ -108,7 +108,7 @@ public class FriendServiceImpl {
         pushNotificationService.send(
                 List.of(receiver.getPushToken()),
                 "Kind<3",
-                sender.getFirstName() + " sent you <3"
+                sender.getFirstName() + " is sending you some love 🩷."
         );
     }
 
